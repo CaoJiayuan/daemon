@@ -1,0 +1,19 @@
+{
+    "name": "nerio/daemon",
+    "description": "PHP Daemon implements",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "cjy",
+            "email": "cjy632258@hotmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Nerio\\Daemon\\": "src/"
+        }
+    }
+}
