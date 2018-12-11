@@ -71,11 +71,9 @@ abstract class Daemon
             fwrite($fp, posix_getpid());
             fclose($fp);
             $this->beforeStart();
-            $this->runningAtBackGround();
+            $this->runningAsDaemon();
             $this->stop();
         }
-
-
     }
 
     protected function beforeStart()
@@ -88,10 +86,10 @@ abstract class Daemon
     }
 
     /**
-     *
+     * Run your daemon process here.
      * @return mixed
      */
-    abstract protected function runningAtBackGround();
+    abstract protected function runningAsDaemon();
 
     public function getPid()
     {
