@@ -43,12 +43,18 @@ abstract class Daemon
     public function stop() {
         $pid = $this->getPid();
         if ($pid > 0) {
+            $this->beforeStop();
             posix_kill($pid, SIGTERM);
             unlink($this->pidFile);
             return true;
         } else {
             return false;
         }
+    }
+
+    protected function beforeStop()
+    {
+
     }
 
     protected function demonize()
@@ -97,7 +103,11 @@ abstract class Daemon
             return 0;
         }
 
-        $pid = intval(file_get_contents($this->pidFile));
+        try {
+            $pid = intval(file_get_contents($this->pidFile));
+        } catch (\Exception $exception) {
+            return 0;
+        }
 
         if (posix_kill($pid, SIG_DFL)) {
             return $pid;
