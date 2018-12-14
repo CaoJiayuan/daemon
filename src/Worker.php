@@ -20,10 +20,8 @@ class Worker
                 try {
                     call_user_func($runner);
                 } catch (\Exception $exception) {
-                    //file_put_contents(__DIR__ .'/../error.log', $exception->getMessage() . PHP_EOL, FILE_APPEND);
                     $code = $exception->getCode();
                 }
-                file_put_contents(__DIR__ .'/../error.log', 'worker process done!!!!!' . PHP_EOL, FILE_APPEND);
                 exit($code);
             }
         }
