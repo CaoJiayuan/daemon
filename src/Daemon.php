@@ -151,8 +151,6 @@ abstract class Daemon
                 $this->runningAtBackground();
             } catch (\Exception $exception) {
                 exit($exception->getCode());
-            } finally {
-                $this->stop();
             }
         } else {
             exit(1);

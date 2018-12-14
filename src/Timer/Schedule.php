@@ -48,7 +48,7 @@ class Schedule
 
     public function readyNext()
     {
-        $this->setServeAt(Timer::microtime() + $this->interval);
+        $this->setServeAt(Timer::millisecond() + $this->interval);
         return $this;
     }
 
@@ -86,6 +86,6 @@ class Schedule
      */
     public function waiting(): bool
     {
-        return $this->locked || $this->serveAt > Timer::microtime();
+        return $this->locked || $this->serveAt > Timer::millisecond();
     }
 }
