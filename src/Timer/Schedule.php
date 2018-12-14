@@ -35,18 +35,28 @@ class Schedule
 
     public function run()
     {
-        $this->lock();
-        $this->setServeAt($this->microtime() + $this->interval);
         call_user_func_array($this->runner, $this->params);
-        $this->once || $this->unlock();
     }
 
+    /**
+     * @return bool
+     */
+    public function isOnce(): bool
+    {
+        return $this->once;
+    }
+
+    public function readyNext()
+    {
+        $this->setServeAt(Timer::microtime() + $this->interval);
+        return $this;
+    }
 
     /**
      * @param int $serveAt
      * @return Schedule
      */
-    protected function setServeAt(int $serveAt)
+    public function setServeAt(int $serveAt)
     {
         $this->serveAt = $serveAt;
         return $this;
@@ -70,16 +80,12 @@ class Schedule
         return $this;
     }
 
-    protected function microtime()
-    {
-        return microtime(true) * 1000;
-    }
 
     /**
      * @return bool
      */
     public function waiting(): bool
     {
-        return $this->locked || $this->serveAt > $this->microtime();
+        return $this->locked || $this->serveAt > Timer::microtime();
     }
 }

@@ -31,37 +31,37 @@ class Timer extends Daemon
      */
     private $workerCount;
 
-    public function __construct($workerCount = 4,$pidFile = null)
+    public function __construct($workerCount = 4, $pidFile = null)
     {
         parent::__construct($pidFile);
         $this->workerCount = $workerCount;
     }
 
-    protected function initWorkers()
-    {
-        for ($i = 0; $i < $this->workerCount; $i ++) {
-            $this->workers[] =  new Worker($this);
-        }
-    }
 
     /**
      * Run your daemon process here.
      * @return mixed
      */
-    protected function runningAsDaemon()
+    protected function runningAtBackground()
     {
-        $this->initWorkers();
-        foreach($this->workers as $worker) {
-            $worker->run();
-        }
         while (1) {
-            usleep(Timer::MICROSECOND * 500);
+            $this->checkWorkers();
             foreach($this->schedules as $schedule) {
-                $str = $schedule->waiting() ? 'true' : 'false';
                 if (!$schedule->waiting()) {
-                    $schedule->run();
+                    $worker = new Worker();
+                    $this->workers[] = $worker;
+                    if ($this->runningCounts() < $this->workerCount) {
+                        $worker->run(
+                            function () use ($schedule) {
+                                $schedule->run();
+                            }
+                        );
+                        $schedule->isOnce() || $schedule->readyNext();
+                    }
                 }
             }
+
+            usleep(Timer::MICROSECOND * 500);
         }
     }
 
@@ -72,20 +72,31 @@ class Timer extends Daemon
         return $schedule;
     }
 
-    /**
-     * @return Worker
-     */
-    public function selectWorker()
+    protected function runningCounts()
     {
-        $workers = $this->workers;
-        usort($workers, function ($w1, $w2) {
-            $a = $w1->loads();
-            $b = $w2->loads();
-            if ($a == $b) {
-                return 0;
-            }
-            return ($a < $b) ? -1 : 1;
-        });
-        return reset($workers);
+        return count(array_filter($this->workers, function ($w) {
+            return $w->isRunning();
+        }));
     }
+
+    protected function checkWorkers()
+    {
+        $results = [];
+        foreach($this->workers as $worker) {
+            $worker->isRunning() && pcntl_waitpid($worker->getPid(), $status, WNOHANG);
+            $results[] = [
+                'pid' => $worker->getPid(),
+                'running' => $worker->isRunning(),
+            ];
+        }
+
+        return $results;
+    }
+
+
+    public static function microtime()
+    {
+        return microtime(true) * 1000;
+    }
+
 }
