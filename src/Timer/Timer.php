@@ -28,6 +28,7 @@ class Timer extends Daemon
 
     private $tick = Timer::MICROSECOND * 500;
 
+
     public function __construct($workerCount = 4, $pidFile = null)
     {
         parent::__construct($pidFile);
@@ -55,16 +56,17 @@ class Timer extends Daemon
             $this->checkWorkers();
             foreach($this->schedules as $schedule) {
                 if (!$schedule->waiting()) {
-
+                    $worker = new Worker();
+                    $this->pushWorker($worker);
                     if ($this->runningWorkerCount() < $this->workerCount) {
-                        $worker = new Worker();
-                        $this->pushWorker($worker);
-                        $worker->run(
-                            function () use ($schedule) {
-                                $schedule->run();
-                            }
-                        );
-                        $schedule->isOnce() || $schedule->readyNext();
+                        if ($w = $this->selectWorker()) {
+                            $w->run(
+                                function () use ($schedule) {
+                                    $schedule->run();
+                                }
+                            );
+                            $schedule->isOnce() || $schedule->readyNext();
+                        }
                     }
                 }
             }

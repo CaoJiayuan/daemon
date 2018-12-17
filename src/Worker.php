@@ -3,9 +3,13 @@ namespace Nerio\Daemon;
 
 class Worker
 {
+    const STATUS_PENDING = 0;
+    const STATUS_RUNNING = 1;
+    const STATUS_STOPPED = 2;
+
     protected $pid = 0;
 
-    protected $running = false;
+    protected $status = Worker::STATUS_PENDING;
 
     public function run(callable $runner)
     {
@@ -14,7 +18,8 @@ class Worker
             if ($this->pid < 0) {
                 exit('can not fork');
             } else if ($this->pid > 0) {
-                $this->running = true;
+                $this->status = Worker::STATUS_RUNNING;
+                return;
             } else {
                 $code = 0;
                 try {
@@ -29,7 +34,7 @@ class Worker
 
     public function stop()
     {
-        $this->running = false;
+        $this->status = Worker::STATUS_STOPPED;
     }
 
     /**
@@ -37,7 +42,12 @@ class Worker
      */
     public function isRunning(): bool
     {
-        return $this->running && posix_kill($this->pid, SIG_DFL);
+        return $this->status === Worker::STATUS_RUNNING && posix_kill($this->pid, SIG_DFL);
+    }
+
+    public function isExited()
+    {
+        return $this->status === Worker::STATUS_RUNNING && !posix_kill($this->pid, SIG_DFL);
     }
 
     /**
@@ -46,5 +56,13 @@ class Worker
     public function getPid(): int
     {
         return $this->pid;
+    }
+
+    /**
+     * @return int
+     */
+    public function getWorkerStatus(): int
+    {
+        return $this->status;
     }
 }

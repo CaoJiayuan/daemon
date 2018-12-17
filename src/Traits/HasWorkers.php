@@ -26,11 +26,14 @@ trait HasWorkers
         foreach($workers as $k => $worker) {
             if ($worker->isRunning()) {
                 pcntl_waitpid($worker->getPid(), $status, WNOHANG);
-            } else {
+            }
+
+            if ($worker->isExited()) {
                 unset($this->workers[$k]);
             }
+
             $results[] = [
-                'pid' => $worker->getPid(),
+                'pid'     => $worker->getPid(),
                 'running' => $worker->isRunning(),
             ];
         }
@@ -38,9 +41,22 @@ trait HasWorkers
         return $results;
     }
 
+    /**
+     * @return Worker|null
+     */
+    protected function selectWorker()
+    {
+        $ws = array_filter($this->workers, function ($w) {
+            /** @var Worker $w */
+            return $w->getWorkerStatus() === Worker::STATUS_PENDING;
+        });
+
+        return reset($ws);
+    }
     protected function runningWorkerCount()
     {
         return count(array_filter($this->workers, function ($w) {
+            /** @var Worker $w */
             return $w->isRunning();
         }));
     }
