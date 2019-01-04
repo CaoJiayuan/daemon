@@ -27,6 +27,7 @@ class Worker
                 } catch (\Exception $exception) {
                     $code = $exception->getCode();
                 }
+                posix_kill(posix_getppid(), SIGCHLD);
                 exit($code);
             }
         }
@@ -35,6 +36,15 @@ class Worker
     public function stop()
     {
         $this->status = Worker::STATUS_STOPPED;
+        $this->exit();
+    }
+
+    public function exit()
+    {
+        if ($this->pid) {
+            posix_kill($this->pid, SIGTERM);
+            $this->pid = 0;
+        }
     }
 
     /**
@@ -64,5 +74,20 @@ class Worker
     public function getWorkerStatus(): int
     {
         return $this->status;
+    }
+
+    public function check($option = WNOHANG)
+    {
+        if ($this->isRunning()) {
+            pcntl_waitpid($this->pid, $status, $option);
+        }
+    }
+
+
+    public function refresh()
+    {
+        $this->exit();
+        $this->status = self::STATUS_PENDING;
+        return $this;
     }
 }

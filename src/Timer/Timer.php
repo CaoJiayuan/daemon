@@ -60,6 +60,7 @@ class Timer extends Daemon
                     $this->pushWorker($worker);
                     if ($this->runningWorkerCount() < $this->workerCount) {
                         if ($w = $this->selectWorker()) {
+                            $schedule->lock();
                             $w->run(
                                 function () use ($schedule) {
                                     $schedule->run();
@@ -78,8 +79,14 @@ class Timer extends Daemon
     public function schedule(callable $runner, int $interval, ...$params)
     {
         $schedule = new Schedule($runner, $interval, ...$params);
-        $this->schedules[] = $schedule;
-        return $schedule;
+        $i = count($this->schedules) - 1;
+        $this->schedules[$i] = $schedule;
+        return $this->schedules[$i];
+    }
+
+    public function once(callable $runner, ...$params)
+    {
+        return $this->schedule($runner, 0, $params)->once();
     }
 
     public static function millisecond()

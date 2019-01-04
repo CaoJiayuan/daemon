@@ -48,6 +48,7 @@ class Schedule
 
     public function readyNext()
     {
+        $this->unlock();
         $this->setServeAt(Timer::millisecond() + $this->interval);
         return $this;
     }

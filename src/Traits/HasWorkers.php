@@ -21,24 +21,15 @@ trait HasWorkers
 
     protected function checkWorkers()
     {
-        $results = [];
+
         $workers = $this->workers;
         foreach($workers as $k => $worker) {
-            if ($worker->isRunning()) {
-                pcntl_waitpid($worker->getPid(), $status, WNOHANG);
-            }
+            $worker->check();
 
             if ($worker->isExited()) {
                 unset($this->workers[$k]);
             }
-
-            $results[] = [
-                'pid'     => $worker->getPid(),
-                'running' => $worker->isRunning(),
-            ];
         }
-
-        return $results;
     }
 
     /**
@@ -64,5 +55,14 @@ trait HasWorkers
     protected function pushWorker(Worker $worker)
     {
         $this->workers[] = $worker;
+        return $this;
+    }
+
+    public function addWorker($count = 1)
+    {
+        for ($i = 0; $i < $count; $i ++) {
+            $this->workers[] = new Worker();
+        }
+        return $this;
     }
 }
